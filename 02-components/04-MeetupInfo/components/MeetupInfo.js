@@ -46,7 +46,7 @@ export default defineComponent({
       </li>
       <li>
         <img class="icon meetup-info__icon" alt="icon" src="/assets/icons/icon-cal-lg.svg" />
-        <time :datetime="\`\${isoDate}\`">{{ formattedDate }}</time>
+        <time :datetime="isoDate">{{ formattedDate }}</time>
       </li>
     </ul>`,
 });
