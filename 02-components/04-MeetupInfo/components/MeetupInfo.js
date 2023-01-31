@@ -18,18 +18,19 @@ export default defineComponent({
     }
   },
 
-  methods: {
-    getFormattedDate(ms) {
+  computed: {
+    formattedDate() {
       const dateOptions = {
         year: "numeric",
         day: "numeric",
         month: "long",
       };
 
-      return new Date(ms).toLocaleDateString(navigator.language, dateOptions);
+      return new Date(this.date).toLocaleDateString(navigator.language, dateOptions);
     },
-    getISODate(ms) {
-      return new Date(ms).toISOString().slice(0, 10);
+
+    isoDate() {
+      return new Date(this.date).toISOString().slice(0, 10);
     }
   },
 
@@ -45,7 +46,7 @@ export default defineComponent({
       </li>
       <li>
         <img class="icon meetup-info__icon" alt="icon" src="/assets/icons/icon-cal-lg.svg" />
-        <time :datetime="\`\${getISODate(date)}\`">{{ getFormattedDate(date) }}</time>
+        <time :datetime="isoDate">{{ formattedDate }}</time>
       </li>
     </ul>`,
 });

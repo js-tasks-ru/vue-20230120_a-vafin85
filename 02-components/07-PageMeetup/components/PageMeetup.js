@@ -30,24 +30,13 @@ export default defineComponent({
   },
 
   watch: {
-    meetupId: {
-      immediate: true,
-
-      async handler() {
-        this.isLoading = true;
-
-        this.reset();
-
-        try {
-          this.meetup = await fetchMeetupById(this.meetupId);
-        } catch(e) {
-          this.isError = true;
-          this.errorMessage = e.toString().slice(7);
-        } finally {
-          this.isLoading = false;
-        }
-      }
+    meetupId() {
+      this.fetchMeetup();
     }
+  },
+
+  mounted() {
+    this.fetchMeetup();
   },
 
   methods: {
@@ -58,6 +47,20 @@ export default defineComponent({
       }
 
       this.meetup = undefined;
+    },
+    async fetchMeetup() {
+      this.isLoading = true;
+
+      this.reset();
+
+      try {
+        this.meetup = await fetchMeetupById(this.meetupId);
+      } catch(e) {
+        this.isError = true;
+        this.errorMessage = e.toString().slice(7);
+      } finally {
+        this.isLoading = false;
+      }
     }
   },
 

@@ -13,8 +13,7 @@ export default defineComponent({
   },
 
   template: `
-<!--    <div class="meetup-cover" style="&#45;&#45;bg-url: url('https://course-vue.javascript.ru/api/images/2')">-->
-    <div class="meetup-cover" :style="image && { '--bg-url': \`url(\${this.image})\` }">
+    <div class="meetup-cover" :style="image && { '--bg-url': \`url(\${image})\` }">
         <!-- Ссылка выше - пример верстки при наличии изображения, а не изображение по умолчанию. -->
         <!-- Изображение по умолчанию уже есть в стилях. Для его вывода достаточно не добавлять никаких стилей. -->
         <h1 class="meetup-cover__title">{{ title }}</h1>
