@@ -1,25 +1,83 @@
 <template>
   <div class="toasts">
-    <div class="toast toast_success">
-      <ui-icon class="toast__icon" icon="check-circle" />
-      <span>Success Toast Example</span>
-    </div>
-
-    <div class="toast toast_error">
-      <ui-icon class="toast__icon" icon="alert-circle" />
-      <span>Error Toast Example</span>
+    <div v-for="message in messages" :key="message.text" :class="['toast', {
+      'toast_success': message.type === $options.MessageType.SUCCESS,
+      'toast_error': message.type === $options.MessageType.ERROR,
+    }]">
+      <ui-icon class="toast__icon" :icon="$options.IconName[message.type]" />
+      <span>{{ message.text }}</span>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import UiIcon from './UiIcon.vue';
+import {defineComponent} from "vue";
+import {nanoid} from "nanoid";
 
-export default {
+enum MessageType {
+  SUCCESS = `SUCCESS`,
+  ERROR = `ERROR`
+}
+
+const IconName = {
+  SUCCESS: 'check-circle',
+  ERROR: 'alert-circle'
+}
+
+interface Message {
+  id: string;
+  text: string;
+  type: MessageType;
+}
+
+interface Data {
+  messages: Message[],
+  id: number,
+}
+
+export default defineComponent({
   name: 'TheToaster',
 
   components: { UiIcon },
-};
+
+  MessageType,
+
+  IconName,
+
+  data(): Data {
+    return {
+      messages: [],
+      id: 0,
+    }
+  },
+
+  methods: {
+    success(message: string) {
+      const id = nanoid(10);
+      this.messages.push({id, text: message, type: MessageType.SUCCESS});
+
+      this.removeMessageWithTimeout(id);
+    },
+
+    error(message: string) {
+      const id = nanoid(10);
+      this.messages.push({id, text: message, type: MessageType.ERROR});
+
+      this.removeMessageWithTimeout(id);
+    },
+
+    removeMessageWithTimeout(id: string) {
+      setTimeout(() => {
+        const index = this.messages.findIndex((el) => el.id === id);
+
+        if (index !== -1) {
+          this.messages.splice(index, 1);
+        }
+      }, 5000);
+    }
+  }
+});
 </script>
 
 <style scoped>
