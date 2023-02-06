@@ -2,6 +2,13 @@ const TheToaster = require(global.getSolutionPath('components/TheToaster')).defa
 const UiIcon = require('../components/UiIcon').default;
 import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
+import { randomFillSync } from 'crypto';
+
+window.crypto = {
+  getRandomValues(buffer) {
+    return randomFillSync(buffer);
+  },
+};
 
 jest.useFakeTimers();
 
