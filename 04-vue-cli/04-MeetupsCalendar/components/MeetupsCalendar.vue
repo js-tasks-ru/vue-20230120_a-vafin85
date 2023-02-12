@@ -3,26 +3,14 @@
     <div class="calendar-view__controls">
       <div class="calendar-view__controls-inner">
         <button class="calendar-view__control-left" type="button" aria-label="Previous month"
-          @click="setMonth($options.ChangeMonthType.PREV)"></button>
+          @click="setCurrentMonth($options.MonthType.PREV)"></button>
         <div class="calendar-view__date">{{ currentDateTitle }}</div>
-        <button class="calendar-view__control-right" type="button" aria-label="Next month" @click="setMonth($options.ChangeMonthType.NEXT)"></button>
+        <button class="calendar-view__control-right" type="button" aria-label="Next month" @click="setCurrentMonth($options.MonthType.NEXT)"></button>
       </div>
     </div>
 
     <div class="calendar-view__grid">
-      <div v-for="day in days" :key="day.id" :class="['calendar-view__cell', {
-        'calendar-view__cell_inactive': day.isInactive
-      }]" tabindex="0">
-        <div class="calendar-view__cell-day">{{ day.day }}</div>
-        <div class="calendar-view__cell-content"></div>
-      </div>
-<!--      <div class="calendar-view__cell" tabindex="0">-->
-<!--        <div class="calendar-view__cell-day">12</div>-->
-<!--        <div class="calendar-view__cell-content">-->
-<!--          <a href="/meetups/1" class="calendar-event">Meetup 1</a>-->
-<!--          <a href="/meetups/2" class="calendar-event">Meetup 2</a>-->
-<!--        </div>-->
-<!--      </div>-->
+      <calendar-day v-for="day in days" :key="day.id" :day="day" />
     </div>
   </div>
 </template>
@@ -34,15 +22,22 @@ import dayjs from "dayjs";
 import "dayjs/locale/ru";
 import weekday from 'dayjs/plugin/weekday';
 import {nanoid} from "nanoid";
+import CalendarDay from "./CalendarDay.vue";
 
 dayjs.extend(weekday);
 dayjs.locale(`ru`);
 
 const DAYS_IN_WEEK = 7;
 
-enum ChangeMonthType {
+enum MonthType {
   NEXT,
   PREV
+}
+
+enum DateType {
+  CURRENT_MONTH,
+  NEXT_MONTH,
+  PREV_MONTH
 }
 
 interface Meetup {
@@ -56,19 +51,23 @@ interface Data {
   currentDate: Date,
 }
 
-interface Day {
+export interface Day {
   id: string,
   day: number,
-  date: Date,
+  meetups?: Meetup[],
   isInactive?: boolean
 }
 
 export default defineComponent({
   name: 'MeetupsCalendar',
 
+  components: {CalendarDay},
+
   DAYS_IN_WEEK,
 
-  ChangeMonthType,
+  MonthType,
+
+  DateType,
 
   props: {
     meetups: {
@@ -101,15 +100,37 @@ export default defineComponent({
   },
 
   methods: {
-    setMonth(type: ChangeMonthType): void {
+    getDate(type: DateType, day: number): Date {
       switch(type) {
-        case ChangeMonthType.NEXT:
-          this.currentDate = dayjs(this.currentDate).month(dayjs(this.currentDate).month() + 1).toDate();
-          break;
-        case ChangeMonthType.PREV:
-          this.currentDate = dayjs(this.currentDate).month(dayjs(this.currentDate).month() - 1).toDate();
-          break;
+        case DateType.NEXT_MONTH:
+          return dayjs(this.currentDate).month(dayjs(this.currentDate).month() - 1).date(day).toDate();
+        case DateType.PREV_MONTH:
+          return dayjs(this.currentDate).month(dayjs(this.currentDate).month() + 1).date(day).toDate();
+        case DateType.CURRENT_MONTH:
+          return dayjs(this.currentDate).date(day).toDate();
       }
+    },
+
+    getMonth(type: MonthType): Date {
+      switch(type) {
+        case MonthType.NEXT:
+          return dayjs(this.currentDate).month(dayjs(this.currentDate).month() + 1).toDate();
+        case MonthType.PREV:
+          return dayjs(this.currentDate).month(dayjs(this.currentDate).month() - 1).toDate();
+      }
+    },
+
+    getMeetups(date: Date): Meetup[] {
+      return this.meetups
+        .filter((meetup) => {
+          return dayjs(meetup.date)
+            .format('YYYY-MM-DD') === dayjs(date)
+            .format('YYYY-MM-DD');
+        });
+    },
+
+    setCurrentMonth(type: MonthType): void {
+      this.currentDate = this.getMonth(type);
     },
 
     setDays(days: Day[]): void {
@@ -117,16 +138,20 @@ export default defineComponent({
 
       let day = 1;
       while(day <= daysInMonth) {
-        const date = dayjs(dayjs(this.currentDate).date(day)).toDate();
-
-        days.push(
-          {
-            id: nanoid(10),
-            day: day++,
-            date,
-          }
-        )
+        const date = this.getDate(DateType.CURRENT_MONTH, day);
+        this.addDayToCalendar(days, day++, date);
       }
+    },
+
+    addDayToCalendar(days: Day[], day: number, date: Date, isInactive?: boolean): void {
+      days.push(
+        {
+          id: nanoid(10),
+          meetups: this.getMeetups(date),
+          day: day,
+          isInactive,
+        }
+      )
     },
 
     setDaysBefore(): Day[] {
@@ -138,19 +163,9 @@ export default defineComponent({
       let day = lastDay - daysBefore + 1;
 
       while(day <= lastDay) {
-        const date = dayjs(dayjs(this.currentDate)
-          .month(dayjs(this.currentDate).month() - 1)
-          .date(day)
-        ).toDate();
+        const date = this.getDate(DateType.PREV_MONTH, day);
 
-        beforeDays.push(
-          {
-            id: nanoid(10),
-            date,
-            day: day++,
-            isInactive: true,
-          }
-        )
+        this.addDayToCalendar(beforeDays, day++, date, true);
       }
 
       return beforeDays;
@@ -164,25 +179,15 @@ export default defineComponent({
 
       if (daysAfter <= DAYS_IN_WEEK) {
         let day = 1;
-        while(day <= daysAfter) {
-          const date = dayjs(dayjs(this.currentDate)
-            .month(dayjs(this.currentDate).month() + 1)
-            .date(day)
-          ).toDate();
 
-          afterDays.push(
-            {
-              id: nanoid(10),
-              day: day++,
-              isInactive: true,
-              date,
-            }
-          )
+        while(day <= daysAfter) {
+          const date = this.getDate(DateType.NEXT_MONTH, day);
+          this.addDayToCalendar(afterDays, day++, date, true);
         }
       }
 
       return afterDays;
-    }
+    },
   }
 });
 </script>
@@ -250,69 +255,9 @@ export default defineComponent({
   border-bottom: none;
 }
 
-.calendar-view__cell {
-  position: relative;
-  height: auto;
-  padding: 6px 8px;
-  background-color: var(--white);
-  color: var(--grey-8);
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 24px;
-  border-bottom: 1px solid var(--grey);
-  border-left: 1px solid var(--grey);
-  text-align: right;
-}
-
-.calendar-view__cell.calendar-view__cell_inactive {
-  background-color: var(--grey-light);
-}
-
-@media all and (max-width: 767px) {
-  .calendar-view__cell:nth-child(5n + 1) {
-    border-left: none;
-  }
-}
-
 @media all and (min-width: 767px) {
   .calendar-view__grid {
     grid-template-columns: repeat(7, 1fr);
-  }
-
-  .calendar-view__cell {
-    height: 144px;
-  }
-
-  .calendar-view__cell:nth-child(7n + 1) {
-    border-left: none;
-  }
-}
-
-.calendar-event {
-  --max-lines: 2;
-  --line-height: 16px;
-
-  display: block;
-  text-align: left;
-  text-decoration: none;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: var(--line-height);
-  color: var(--white);
-  padding: 4px 6px;
-  border-radius: 2px;
-  background-color: var(--blue);
-  margin-top: 4px;
-}
-
-@media all and (min-width: 767px) {
-  .calendar-event {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    max-height: calc(var(--max-lines) * var(--line-height) + 6px);
   }
 }
 </style>
