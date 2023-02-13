@@ -5,7 +5,8 @@
         <button class="calendar-view__control-left" type="button" aria-label="Previous month"
           @click="setCurrentMonth($options.MonthType.PREV)"></button>
         <div class="calendar-view__date">{{ currentDateTitle }}</div>
-        <button class="calendar-view__control-right" type="button" aria-label="Next month" @click="setCurrentMonth($options.MonthType.NEXT)"></button>
+        <button class="calendar-view__control-right" type="button" aria-label="Next month"
+          @click="setCurrentMonth($options.MonthType.NEXT)"></button>
       </div>
     </div>
 
@@ -28,6 +29,8 @@ dayjs.extend(weekday);
 dayjs.locale(`ru`);
 
 const DAYS_IN_WEEK = 7;
+
+const DATE_FORMAT = 'YYYY-MM-DD';
 
 enum MonthType {
   NEXT,
@@ -63,11 +66,7 @@ export default defineComponent({
 
   components: {CalendarDay},
 
-  DAYS_IN_WEEK,
-
   MonthType,
-
-  DateType,
 
   props: {
     meetups: {
@@ -96,6 +95,22 @@ export default defineComponent({
       this.setDays(days);
 
       return [...days, ...this.setDaysAfter()];
+    },
+
+    filteredMeetups(): Map<string, Meetup[]> {
+      const filteredMeetups = new Map();
+
+      this.meetups.forEach((meetup) => {
+        const date = dayjs(meetup.date).format(DATE_FORMAT);
+
+        if (filteredMeetups.has(date)) {
+          filteredMeetups.get(date).push(meetup);
+        } else {
+          filteredMeetups.set(date, [meetup]);
+        }
+      });
+
+      return filteredMeetups;
     }
   },
 
@@ -120,15 +135,6 @@ export default defineComponent({
       }
     },
 
-    getMeetups(date: Date): Meetup[] {
-      return this.meetups
-        .filter((meetup) => {
-          return dayjs(meetup.date)
-            .format('YYYY-MM-DD') === dayjs(date)
-            .format('YYYY-MM-DD');
-        });
-    },
-
     setCurrentMonth(type: MonthType): void {
       this.currentDate = this.getMonth(type);
     },
@@ -147,7 +153,7 @@ export default defineComponent({
       days.push(
         {
           id: nanoid(10),
-          meetups: this.getMeetups(date),
+          meetups: this.filteredMeetups.get(dayjs(date).format(DATE_FORMAT)),
           day: day,
           isInactive,
         }

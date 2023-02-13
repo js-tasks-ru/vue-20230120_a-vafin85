@@ -1,7 +1,7 @@
 <template>
-  <div :class="['calendar-view__cell', {
+  <div class="calendar-view__cell" :class="{
         'calendar-view__cell_inactive': day.isInactive
-      }]" tabindex="0">
+      }" tabindex="0">
     <div class="calendar-view__cell-day">{{ day.day }}</div>
     <div class="calendar-view__cell-content">
       <a v-for="meetup in day.meetups"
