@@ -35,6 +35,12 @@ export interface Message {
   type: MessageType;
 }
 
+interface CreateToast {
+  text: string;
+  timeout?: number;
+  type: MessageType;
+}
+
 interface Data {
   messages: Message[],
 }
@@ -54,31 +60,23 @@ export default defineComponent({
 
   methods: {
     success(text: string, timeout: number) {
-      const message: Message = this.getMessage(text, MessageType.SUCCESS);
-
-      message.timerId = this.removeMessageWithTimeout(message.id, timeout);
-
-      this.messages.push(message);
+      this.createToast({text, timeout, type: MessageType.SUCCESS});
     },
 
     error(text: string, timeout: number) {
-      const message: Message = this.getMessage(text, MessageType.ERROR);
-
-      message.timerId = this.removeMessageWithTimeout(message.id, timeout);
-
-      this.messages.push(message);
+      this.createToast({text, timeout, type: MessageType.ERROR});
     },
 
     info(text: string, timeout: number) {
-      const message: Message = this.getMessage(text, MessageType.INFO);
-
-      message.timerId = this.removeMessageWithTimeout(message.id, timeout);
-
-      this.messages.push(message);
+      this.createToast({text, timeout,  type: MessageType.INFO});
     },
 
     warning(text: string, timeout: number) {
-      const message: Message = this.getMessage(text, MessageType.WARNING);
+      this.createToast({text, timeout,  type: MessageType.WARNING});
+    },
+
+    createToast({text, timeout, type}: CreateToast) {
+      const message: Message = this.getMessage(text, type);
 
       message.timerId = this.removeMessageWithTimeout(message.id, timeout);
 
