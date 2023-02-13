@@ -3,7 +3,7 @@
     <ui-toast v-for="toast in toasts"
       :key="toast.id"
       :toast="toast"
-      :close-toast="closeToast"
+      @close="closeToast(toast.id)"
     />
   </ui-toasts>
 </template>

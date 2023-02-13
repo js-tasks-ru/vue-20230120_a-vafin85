@@ -1,7 +1,7 @@
 <template>
   <div class="toast" :class="classType">
     <button type="button" class="toast__close" aria-label="Закрыть тост"
-      @click.prevent="closeToast(toast.id)"></button>
+      @click.prevent="$emit(`close`)"></button>
     <ui-icon class="toast__icon" :icon="icon" />
     <span>{{ toast.text }}</span>
   </div>
@@ -35,10 +35,9 @@ export default defineComponent({
       type: Object as PropType<Toast>,
       required: true,
     },
-    closeToast: Function as PropType<(id: string) => void>
   },
 
-  emits: ['update:close'],
+  emits: ['close'],
 
   computed: {
     classType() {
