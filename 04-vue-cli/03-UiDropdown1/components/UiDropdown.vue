@@ -16,9 +16,10 @@
     <div v-show="isOpen" class="dropdown__menu" role="listbox">
       <button v-for="option in options"
         :key="option.value"
-        :class="['dropdown__item', {
+        class="dropdown__item"
+        :class="{
           'dropdown__item_icon': type === $options.DropdownType.WITH_ICON,
-        }]"
+        }"
         role="option"
         type="button"
         @click="selectOption(option.value)"
@@ -57,7 +58,6 @@ interface Option {
 
 interface Data {
   isOpen: boolean,
-  type: DropdownType,
 }
 
 export default defineComponent({
@@ -86,7 +86,6 @@ export default defineComponent({
   data(): Data {
     return {
       isOpen: false,
-      type: DropdownType.WITH_ICON,
     }
   },
 
@@ -95,17 +94,13 @@ export default defineComponent({
       return this.options.find((option) => option.value === this.modelValue);
     },
 
-    currentTitle() {
+    currentTitle(): string {
       return this.selectedOption ? this.selectedOption.text : this.title
+    },
+
+    type(): DropdownType {
+      return this.options.some((option) => option.icon) ? DropdownType.WITH_ICON : DropdownType.WITHOUT_ICON;
     }
-  },
-
-  beforeMount() {
-    this.setDropdownType();
-  },
-
-  beforeUpdate() {
-    this.setDropdownType();
   },
 
   methods: {
@@ -117,25 +112,6 @@ export default defineComponent({
     toggleDropdown(): void {
       this.isOpen = !this.isOpen
     },
-
-    setDropdownType(): void {
-      const type = {
-        withIcon: false,
-        withoutIcon: false,
-      }
-
-      this.options.forEach((option) => {
-        if (option.icon) {
-          type.withIcon = true;
-        } else {
-          type.withoutIcon = true;
-        }
-      });
-
-      this.type = type.withIcon && type.withoutIcon || type.withIcon ? DropdownType.WITH_ICON : DropdownType.WITHOUT_ICON;
-    }
-
-
   }
 });
 </script>
