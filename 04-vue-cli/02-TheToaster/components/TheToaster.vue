@@ -21,18 +21,11 @@ import {nanoid} from "nanoid";
 import UiToast from "./UiToast.vue";
 import UiToasts from "./UiToasts.vue";
 
-enum MessageType {
+export enum MessageType {
   SUCCESS = `SUCCESS`,
   ERROR = `ERROR`,
   INFO = `INFO`,
   WARNING = `WARNING`
-}
-
-enum IconName {
-  SUCCESS = 'check-circle',
-  INFO = 'check-circle',
-  ERROR = 'alert-circle',
-  WARNING = 'alert-circle'
 }
 
 export interface Message {
@@ -40,7 +33,6 @@ export interface Message {
   text: string;
   timerId?: number;
   type: MessageType;
-  icon: IconName;
 }
 
 interface Data {
@@ -53,8 +45,6 @@ export default defineComponent({
   components: {UiToasts, UiToast, UiIcon },
 
   MessageType,
-
-  IconName,
 
   data(): Data {
     return {
@@ -96,7 +86,7 @@ export default defineComponent({
     },
 
     getMessage(text: string, type: MessageType): Message {
-      return {id: nanoid(10), text: text, type, icon: IconName[type]}
+      return {id: nanoid(10), text: text, type}
     },
 
     closeToast(id: string) {
