@@ -1,15 +1,9 @@
 <template>
   <ui-toasts>
-    <ui-toast v-for="message in messages"
-      :key="message.id"
-      :message="message"
+    <ui-toast v-for="toast in toasts"
+      :key="toast.id"
+      :toast="toast"
       :close-toast="closeToast"
-      :class="[{
-        'toast_success': message.type === $options.MessageType.SUCCESS,
-        'toast_error': message.type === $options.MessageType.ERROR,
-        'toast_warning': message.type === $options.MessageType.WARNING,
-        'toast_info': message.type === $options.MessageType.INFO,
-      }]"
     />
   </ui-toasts>
 </template>
@@ -21,28 +15,28 @@ import {nanoid} from "nanoid";
 import UiToast from "./UiToast.vue";
 import UiToasts from "./UiToasts.vue";
 
-export enum MessageType {
+export enum ToastType {
   SUCCESS = `SUCCESS`,
   ERROR = `ERROR`,
   INFO = `INFO`,
   WARNING = `WARNING`
 }
 
-export interface Message {
+export interface Toast {
   id: string;
   text: string;
   timerId?: number;
-  type: MessageType;
+  type: ToastType;
 }
 
 interface CreateToast {
   text: string;
   timeout?: number;
-  type: MessageType;
+  type: ToastType;
 }
 
 interface Data {
-  messages: Message[],
+  toasts: Toast[],
 }
 
 export default defineComponent({
@@ -50,59 +44,57 @@ export default defineComponent({
 
   components: {UiToasts, UiToast, UiIcon },
 
-  MessageType,
-
   data(): Data {
     return {
-      messages: [],
+      toasts: [],
     }
   },
 
   methods: {
     success(text: string, timeout: number) {
-      this.createToast({text, timeout, type: MessageType.SUCCESS});
+      this.createToast({text, timeout, type: ToastType.SUCCESS});
     },
 
     error(text: string, timeout: number) {
-      this.createToast({text, timeout, type: MessageType.ERROR});
+      this.createToast({text, timeout, type: ToastType.ERROR});
     },
 
     info(text: string, timeout: number) {
-      this.createToast({text, timeout,  type: MessageType.INFO});
+      this.createToast({text, timeout,  type: ToastType.INFO});
     },
 
     warning(text: string, timeout: number) {
-      this.createToast({text, timeout,  type: MessageType.WARNING});
+      this.createToast({text, timeout,  type: ToastType.WARNING});
     },
 
     createToast({text, timeout, type}: CreateToast) {
-      const message: Message = this.getMessage(text, type);
+      const message: Toast = this.getMessage(text, type);
 
-      message.timerId = this.removeMessageWithTimeout(message.id, timeout);
+      message.timerId = this.removeToastWithTimeout(message.id, timeout);
 
-      this.messages.push(message);
+      this.toasts.push(message);
     },
 
-    getMessage(text: string, type: MessageType): Message {
+    getMessage(text: string, type: ToastType): Toast {
       return {id: nanoid(10), text: text, type}
     },
 
     closeToast(id: string) {
-      const index = this.messages.findIndex((el) => el.id === id);
+      const index = this.toasts.findIndex((el) => el.id === id);
 
       if (index !== -1) {
-        clearTimeout(this.messages[index].timerId);
+        clearTimeout(this.toasts[index].timerId);
 
-        this.messages.splice(index, 1);
+        this.toasts.splice(index, 1);
       }
     },
 
-    removeMessageWithTimeout(id: string, timeout?: number): number {
+    removeToastWithTimeout(id: string, timeout?: number): number {
       return setTimeout(() => {
-        const index = this.messages.findIndex((el) => el.id === id);
+        const index = this.toasts.findIndex((toast) => toast.id === id);
 
         if (index !== -1) {
-          this.messages.splice(index, 1);
+          this.toasts.splice(index, 1);
         }
       }, timeout || 5000);
     }

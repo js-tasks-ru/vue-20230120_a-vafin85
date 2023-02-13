@@ -1,9 +1,9 @@
 <template>
   <div class="toast" :class="classType">
     <button type="button" class="toast__close" aria-label="Закрыть тост"
-      @click.prevent="closeToast(message.id)"></button>
+      @click.prevent="closeToast(toast.id)"></button>
     <ui-icon class="toast__icon" :icon="icon" />
-    <span>{{ message.text }}</span>
+    <span>{{ toast.text }}</span>
   </div>
 </template>
 
@@ -11,7 +11,7 @@
 import {defineComponent} from 'vue';
 import type { PropType } from 'vue'
 import UiIcon from "./UiIcon.vue";
-import type {Message} from "./TheToaster.vue";
+import type {Toast} from "./TheToaster.vue";
 
 const ToastClass = {
   SUCCESS: 'toast_success',
@@ -31,8 +31,8 @@ export default defineComponent({
   components: {UiIcon},
 
   props: {
-    message: {
-      type: Object as PropType<Message>,
+    toast: {
+      type: Object as PropType<Toast>,
       required: true,
     },
     closeToast: Function as PropType<(id: string) => void>
@@ -42,10 +42,11 @@ export default defineComponent({
 
   computed: {
     classType() {
-      return ToastClass[this.message.type];
+      return ToastClass[this.toast.type];
     },
+
     icon() {
-      return IconName[this.message.type];
+      return IconName[this.toast.type];
     }
   },
 });
