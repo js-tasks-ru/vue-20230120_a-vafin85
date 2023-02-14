@@ -1,31 +1,119 @@
 <template>
-  <div class="dropdown dropdown_opened">
-    <button type="button" class="dropdown__toggle dropdown__toggle_icon">
-      <ui-icon icon="tv" class="dropdown__icon" />
-      <span>Title</span>
+  <div :class="['dropdown', {
+    'dropdown_opened': isOpen
+  }]">
+    <button type="button"
+      :class="['dropdown__toggle', {
+        'dropdown__toggle_icon': type === $options.DropdownType.WITH_ICON,
+      }]"
+      @click.prevent="toggleDropdown"
+    >
+      <ui-icon v-if="type === $options.DropdownType.WITH_ICON && selectedOption?.icon" :icon="selectedOption.icon"
+        class="dropdown__icon" />
+      <span>{{ currentTitle }}</span>
     </button>
 
-    <div class="dropdown__menu" role="listbox">
-      <button class="dropdown__item dropdown__item_icon" role="option" type="button">
-        <ui-icon icon="tv" class="dropdown__icon" />
-        Option 1
-      </button>
-      <button class="dropdown__item dropdown__item_icon" role="option" type="button">
-        <ui-icon icon="tv" class="dropdown__icon" />
-        Option 2
+    <div v-show="isOpen" class="dropdown__menu" role="listbox">
+      <button v-for="option in options"
+        :key="option.value"
+        class="dropdown__item"
+        :class="{
+          'dropdown__item_icon': type === $options.DropdownType.WITH_ICON,
+        }"
+        role="option"
+        type="button"
+        @click="selectOption(option.value)"
+      >
+        <ui-icon v-if="option.icon" :icon="option.icon" class="dropdown__icon" />
+        {{ option.text }}
       </button>
     </div>
   </div>
+  <select style="visibility: hidden" :value="modelValue" @change="$emit('update:modelValue', $event.target.value)">
+    <option
+      v-for="option in options"
+      :key="option.value"
+      :value="option.value"
+    >
+      {{ option.text }}
+    </option>
+  </select>
 </template>
 
-<script>
-import UiIcon from './UiIcon';
+<script lang="ts">
+import UiIcon from "./UiIcon.vue";
+import {defineComponent} from "vue";
+import type { PropType } from 'vue'
 
-export default {
+enum DropdownType {
+  WITH_ICON,
+  WITHOUT_ICON,
+}
+
+interface Option {
+  value: string;
+  text: string;
+  icon?: string;
+}
+
+interface Data {
+  isOpen: boolean,
+}
+
+export default defineComponent({
   name: 'UiDropdown',
 
+  DropdownType,
+
   components: { UiIcon },
-};
+
+  props: {
+    options: {
+      type: Object as PropType<Option[]>,
+      required: true,
+    },
+    title: {
+      type: String as PropType<string>,
+      required: true,
+    },
+    modelValue: {
+      type: String as PropType<string>
+    }
+  },
+
+  emits: ['update:modelValue'],
+
+  data(): Data {
+    return {
+      isOpen: false,
+    }
+  },
+
+  computed: {
+    selectedOption(): Option | undefined {
+      return this.options.find((option) => option.value === this.modelValue);
+    },
+
+    currentTitle(): string {
+      return this.selectedOption ? this.selectedOption.text : this.title
+    },
+
+    type(): DropdownType {
+      return this.options.some((option) => option.icon) ? DropdownType.WITH_ICON : DropdownType.WITHOUT_ICON;
+    }
+  },
+
+  methods: {
+    selectOption(value: string): void {
+      this.$emit('update:modelValue', value);
+      this.toggleDropdown();
+    },
+
+    toggleDropdown(): void {
+      this.isOpen = !this.isOpen
+    },
+  }
+});
 </script>
 
 <style scoped>

@@ -1,73 +1,107 @@
 <template>
-  <div class="toasts">
-    <div class="toast toast_success">
-      <ui-icon class="toast__icon" icon="check-circle" />
-      <span>Success Toast Example</span>
-    </div>
-
-    <div class="toast toast_error">
-      <ui-icon class="toast__icon" icon="alert-circle" />
-      <span>Error Toast Example</span>
-    </div>
-  </div>
+  <ui-toasts>
+    <ui-toast v-for="toast in toasts"
+      :key="toast.id"
+      :toast="toast"
+      @close="closeToast(toast.id)"
+    />
+  </ui-toasts>
 </template>
 
-<script>
+<script lang="ts">
 import UiIcon from './UiIcon.vue';
+import {defineComponent} from "vue";
+import {nanoid} from "nanoid";
+import UiToast from "./UiToast.vue";
+import UiToasts from "./UiToasts.vue";
 
-export default {
+export enum ToastType {
+  SUCCESS = `SUCCESS`,
+  ERROR = `ERROR`,
+  INFO = `INFO`,
+  WARNING = `WARNING`
+}
+
+export interface Toast {
+  id: string;
+  text: string;
+  timerId?: number;
+  type: ToastType;
+}
+
+interface CreateToast {
+  text: string;
+  timeout?: number;
+  type: ToastType;
+}
+
+interface Data {
+  toasts: Toast[],
+}
+
+export default defineComponent({
   name: 'TheToaster',
 
-  components: { UiIcon },
-};
+  components: {UiToasts, UiToast, UiIcon },
+
+  data(): Data {
+    return {
+      toasts: [],
+    }
+  },
+
+  methods: {
+    success(text: string, timeout: number) {
+      this.createToast({text, timeout, type: ToastType.SUCCESS});
+    },
+
+    error(text: string, timeout: number) {
+      this.createToast({text, timeout, type: ToastType.ERROR});
+    },
+
+    info(text: string, timeout: number) {
+      this.createToast({text, timeout,  type: ToastType.INFO});
+    },
+
+    warning(text: string, timeout: number) {
+      this.createToast({text, timeout,  type: ToastType.WARNING});
+    },
+
+    createToast({text, timeout, type}: CreateToast) {
+      const message: Toast = this.getMessage(text, type);
+
+      message.timerId = this.removeToastWithTimeout(message.id, timeout);
+
+      this.toasts.push(message);
+    },
+
+    getMessage(text: string, type: ToastType): Toast {
+      return {id: nanoid(10), text: text, type}
+    },
+
+    closeToast(id: string) {
+      const index = this.toasts.findIndex((el) => el.id === id);
+
+      if (index !== -1) {
+        clearTimeout(this.toasts[index].timerId);
+
+        this.toasts.splice(index, 1);
+      }
+    },
+
+    removeToastWithTimeout(id: string, timeout?: number): number {
+      return setTimeout(() => {
+        const index = this.toasts.findIndex((toast) => toast.id === id);
+
+        if (index !== -1) {
+          this.toasts.splice(index, 1);
+        }
+      }, timeout || 5000);
+    }
+  }
+});
 </script>
 
 <style scoped>
-.toasts {
-  position: fixed;
-  bottom: 8px;
-  right: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  white-space: pre-wrap;
-  z-index: 999;
-}
 
-@media all and (min-width: 992px) {
-  .toasts {
-    bottom: 72px;
-    right: 112px;
-  }
-}
-
-.toast {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: row;
-  align-items: center;
-  padding: 16px;
-  background: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-  font-size: 18px;
-  line-height: 28px;
-  width: auto;
-}
-
-.toast + .toast {
-  margin-top: 20px;
-}
-
-.toast__icon {
-  margin-right: 12px;
-}
-
-.toast.toast_success {
-  color: var(--green);
-}
-
-.toast.toast_error {
-  color: var(--red);
-}
 </style>
