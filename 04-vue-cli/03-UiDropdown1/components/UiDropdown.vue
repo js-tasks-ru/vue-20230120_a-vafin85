@@ -29,7 +29,7 @@
       </button>
     </div>
   </div>
-  <select style="visibility: hidden" :value="modelValue" @change="$emit('update:modelValue', $event.target.value)">
+  <select style="visibility: hidden" :value="modelValue" @change="$emit('update:modelValue', handleSelectChange($event))">
     <option
       v-for="option in options"
       :key="option.value"
@@ -112,6 +112,10 @@ export default defineComponent({
     toggleDropdown(): void {
       this.isOpen = !this.isOpen
     },
+
+    handleSelectChange(event: Event) {
+      return (event.target as HTMLSelectElement).value;
+    }
   }
 });
 </script>
