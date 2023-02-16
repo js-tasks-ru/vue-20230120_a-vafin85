@@ -14,14 +14,14 @@
     <component
       :is="tag"
       ref="input"
-      :value="modelValue"
       v-bind="$attrs"
+      :value="customModel"
       class="form-control"
       :class="{
         'form-control_rounded': rounded,
         'form-control_sm': small
       }"
-      @input="$emit('update:modelValue', handleInputChange($event))"
+      @[event]="customModel = handleInputChange($event)"
     />
 
     <div v-if="$slots['right-icon']" class="input-group__icon">
@@ -56,6 +56,21 @@ export default defineComponent({
     tag(): 'input' | 'textarea' {
       return this.multiline ? 'textarea' : 'input';
     },
+
+    customModel: {
+      get() {
+        return this.modelValue;
+      },
+      set(value: string ) {
+        this.$emit('update:modelValue', value);
+      },
+    },
+
+    event() {
+      const lazy = this.$attrs['modelModifiers'] && (this.$attrs['modelModifiers'] as Record<string, string>).lazy;
+
+      return lazy ? `change` : `input`;
+    }
   },
 
   methods: {
