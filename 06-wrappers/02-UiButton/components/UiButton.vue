@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import {defineComponent} from 'vue';
-import type { PropType } from 'vue';
+import type { PropType, CreateComponentPublicInstance } from 'vue';
 
 type VariantType = `primary` | `secondary` | `danger`;
 
@@ -23,7 +23,7 @@ export default defineComponent(
 
     props: {
       tag: {
-        type: [String, Object] as PropType<string>,
+        type: [String, Object] as PropType<string | CreateComponentPublicInstance>,
         default: `button`
       },
       variant: {
