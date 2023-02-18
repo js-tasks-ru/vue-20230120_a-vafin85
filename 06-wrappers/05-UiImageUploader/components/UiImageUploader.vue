@@ -1,16 +1,164 @@
 <template>
   <div class="image-uploader">
-    <label class="image-uploader__preview image-uploader__preview-loading" style="--bg-url: url('/link.jpeg')">
-      <span class="image-uploader__text">Загрузить изображение</span>
-      <input type="file" accept="image/*" class="image-uploader__input" />
+    <label
+      class="image-uploader__preview"
+      :class="{
+        'image-uploader__preview-loading': status === $options.LoadStatus.LOADING
+      }"
+      :style="style"
+    >
+      <span class="image-uploader__text">{{ message }}</span>
+      <input
+        ref="input"
+        v-bind="$attrs"
+        type="file"
+        accept="image/*"
+        class="image-uploader__input"
+        @change="onInputChange"
+        @click="onInputClick"
+      />
     </label>
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import {defineComponent} from "vue";
+import type { PropType } from 'vue';
+
+enum LoadStatus {
+  NOT_LOADED = `NOT_LOADED`,
+  LOADING = `LOADING`,
+  LOADED = `LOADED`,
+}
+
+const MessageText = {
+  NOT_LOADED: `Загрузить изображение`,
+  LOADING: `Загрузка...`,
+  LOADED: `Удалить изображение`
+}
+
+interface DataInterface {
+  status: LoadStatus;
+  imageUrl: string | undefined;
+}
+
+export default defineComponent({
   name: 'UiImageUploader',
-};
+
+  inheritAttrs: false,
+
+  LoadStatus,
+
+  props: {
+    preview: String as PropType<string>,
+    uploader: Function as PropType<Function>,
+  },
+
+  emits: ['select', 'error', 'upload', 'remove'],
+
+  data(): DataInterface {
+    return {
+      status: LoadStatus.NOT_LOADED,
+      imageUrl: undefined,
+    }
+  },
+
+  computed: {
+    message(): string {
+      return MessageText[this.status];
+    },
+    image: {
+      set(image: string | undefined) {
+        this.imageUrl = image;
+      },
+      get(): string | undefined {
+        return this.imageUrl;
+      }
+    },
+    style() {
+      return this.status === LoadStatus.LOADED ? `--bg-url: url('${this.image}')` : ``
+    }
+  },
+
+  beforeMount() {
+    this.setInitialImage();
+    this.setInitialType();
+  },
+
+  methods: {
+    setInitialImage() {
+      if (this.preview) {
+        this.image = this.preview;
+      }
+    },
+
+    setInitialType() {
+      if (this.preview) {
+        this.status = LoadStatus.LOADED;
+      }
+    },
+
+    getUrl(notFormattedUrl: string): string {
+      return notFormattedUrl.replace(`blob:`, ``);
+    },
+
+    removeFile(): void {
+      this.image = undefined;
+      this.$emit('remove');
+      (this.$refs.input as HTMLInputElement).value = ``;
+      this.status = LoadStatus.NOT_LOADED;
+    },
+
+    uploadFileWithoutUploader(file: File): void {
+      this.image = this.getUrl(URL.createObjectURL(file));
+      this.status = LoadStatus.LOADED;
+    },
+
+    async uploadFileWithUploader(file: File): Promise<void> {
+      this.status = LoadStatus.LOADING;
+
+      try {
+        const response = await this.uploader!(file);
+
+        this.$emit('upload', response);
+
+        this.image = this.getUrl(response.image);
+
+        this.status = LoadStatus.LOADED;
+      } catch(error) {
+        this.$emit('error', error);
+
+        (this.$refs.input as HTMLInputElement).value = ``;
+
+        this.status = LoadStatus.NOT_LOADED;
+      }
+    },
+
+    async onInputChange(evt: Event) {
+      const files = (evt.currentTarget as HTMLInputElement).files;
+
+      if (files && files.length > 0) {
+        const file = files[0];
+
+        this.$emit('select', file);
+
+        if (!this.uploader) {
+          this.uploadFileWithoutUploader(file);
+        } else {
+          await this.uploadFileWithUploader(file);
+        }
+      }
+    },
+
+    onInputClick(evt: Event) {
+      if (this.status === LoadStatus.LOADED) {
+        evt.preventDefault();
+        this.removeFile();
+      }
+    }
+  },
+
+});
 </script>
 
 <style scoped>
