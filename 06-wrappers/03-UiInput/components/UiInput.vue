@@ -1,21 +1,88 @@
 <template>
-  <div class="input-group input-group_icon input-group_icon-left input-group_icon-right">
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+  <div
+    class="input-group "
+    :class="{
+      'input-group_icon': $slots['left-icon'] || $slots['right-icon'],
+      'input-group_icon-left': $slots['left-icon'],
+      'input-group_icon-right': $slots['right-icon'],
+    }"
+  >
+    <div v-if="$slots['left-icon']" class="input-group__icon">
+      <slot name="left-icon" />
     </div>
 
-    <input ref="input" class="form-control form-control_rounded form-control_sm" />
+    <component
+      :is="tag"
+      ref="input"
+      v-bind="$attrs"
+      :value="customModel"
+      class="form-control"
+      :class="{
+        'form-control_rounded': rounded,
+        'form-control_sm': small
+      }"
+      @[event]="customModel = handleInputChange($event)"
+    />
 
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+    <div v-if="$slots['right-icon']" class="input-group__icon">
+      <slot name="right-icon" />
     </div>
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import {defineComponent} from "vue";
+import type { PropType } from 'vue'
+
+type InputType = HTMLInputElement | HTMLTextAreaElement;
+
+export default defineComponent({
   name: 'UiInput',
-};
+
+  inheritAttrs: false,
+
+  props: {
+    modelValue: String as PropType<string>,
+    small: Boolean as PropType<boolean>,
+    rounded: Boolean as PropType<boolean>,
+    multiline: Boolean as PropType<boolean>,
+  },
+
+  emits: {
+    'update:modelValue': null,
+  },
+
+  computed: {
+    tag(): 'input' | 'textarea' {
+      return this.multiline ? 'textarea' : 'input';
+    },
+
+    customModel: {
+      get() {
+        return this.modelValue;
+      },
+      set(value: string ) {
+        this.$emit('update:modelValue', value);
+      },
+    },
+
+    event() {
+      const lazy = this.$attrs['modelModifiers'] && (this.$attrs['modelModifiers'] as Record<string, string>).lazy;
+
+      return lazy ? `change` : `input`;
+    }
+  },
+
+  methods: {
+    focus() {
+      (this.$refs['input'] as InputType).focus();
+    },
+
+    handleInputChange(event: Event) {
+      return (event.target as InputType).value;
+    }
+  }
+});
 </script>
 
 <style scoped>
