@@ -39,14 +39,14 @@ export default defineComponent({
       type: String as PropType<InputType>,
       default: 'date',
     },
-    modelValue: [Number, null] as PropType<number | null>,
+    modelValue: [Number, null, undefined] as PropType<number | null | undefined>,
     step: [String, Number] as PropType<string | number>
   },
 
   emits: ['update:modelValue'],
 
   methods: {
-    formatDate(date: number | null): string | null {
+    formatDate(date: number | null | undefined): string | null {
       if (!date) {
         return null;
       }

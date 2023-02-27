@@ -98,10 +98,6 @@ export default defineComponent({
       }
     },
 
-    getUrl(notFormattedUrl: string): string {
-      return notFormattedUrl.replace(`blob:`, ``);
-    },
-
     removeFile(): void {
       this.image = undefined;
       this.$emit('remove');
@@ -110,7 +106,7 @@ export default defineComponent({
     },
 
     uploadFileWithoutUploader(file: File): void {
-      this.image = this.getUrl(URL.createObjectURL(file));
+      this.image = URL.createObjectURL(file);
       this.status = LoadStatus.LOADED;
     },
 
@@ -122,7 +118,7 @@ export default defineComponent({
 
         this.$emit('upload', response);
 
-        this.image = this.getUrl(response.image);
+        this.image = response.image;
 
         this.status = LoadStatus.LOADED;
       } catch(error) {
