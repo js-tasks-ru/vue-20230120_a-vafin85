@@ -3,6 +3,7 @@
   "include": ["**/*.ts", "**/*.vue"],
   "exclude": ["node_modules"],
   "compilerOptions": {
+    "lib": ["es2017", "DOM"],
     "baseUrl": ".",
     "allowJs": true,
     "paths": {
