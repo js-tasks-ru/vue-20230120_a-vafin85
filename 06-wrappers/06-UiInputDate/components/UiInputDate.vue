@@ -4,7 +4,7 @@
     :model-value="formatDate(modelValue)"
     :type="type"
     :step="step"
-    @update:model-value="$emit('update:modelValue', updateValue($event))"
+    @input="handleInput($event)"
   >
     <template v-for="slotName in Object.keys($slots)" #[slotName]>
       <slot :name="slotName" />
@@ -39,14 +39,14 @@ export default defineComponent({
       type: String as PropType<InputType>,
       default: 'date',
     },
-    modelValue: [Number, null] as PropType<number | null>,
+    modelValue: [Number, null, undefined] as PropType<number | null | undefined>,
     step: [String, Number] as PropType<string | number>
   },
 
   emits: ['update:modelValue'],
 
   methods: {
-    formatDate(date: number | null): string | null {
+    formatDate(date: number | null | undefined): string | null {
       if (!date) {
         return null;
       }
@@ -68,27 +68,10 @@ export default defineComponent({
       return formattedDate;
     },
 
-    updateValue(value: string): number | null {
-      let formattedValue = null;
-
-      if (this.type === 'date') {
-        formattedValue = Date.parse(value);
-      }
-
-      if (this.type === 'time') {
-        formattedValue = Date.parse(`1970-01-01T${value}:00Z`);
-
-        if (this.step && +this.step % 60 !== 0) {
-          formattedValue = Date.parse(`1970-01-01T${value}Z`);
-        }
-      }
-
-      if (this.type === 'datetime-local') {
-        formattedValue = Date.parse(`${value}Z`);
-      }
-
-      return formattedValue;
-    }
+    handleInput($event: Event) {
+      const target = $event.target as HTMLInputElement
+      this.$emit('update:modelValue', target.value !== '' ? target.valueAsNumber : undefined);
+    },
   }
 });
 </script>

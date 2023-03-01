@@ -1,48 +1,65 @@
 <template>
   <fieldset class="agenda-item-form">
-    <button type="button" class="agenda-item-form__remove-button">
+    <button type="button" class="agenda-item-form__remove-button" @click="$emit('remove')">
       <UiIcon icon="trash" />
     </button>
 
     <UiFormGroup>
-      <UiDropdown title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
+      <UiDropdown v-model="currentItem.type" title="Тип" :options="$options.agendaItemTypeOptions" name="type" />
     </UiFormGroup>
 
     <div class="agenda-item-form__row">
       <div class="agenda-item-form__col">
         <UiFormGroup label="Начало">
-          <UiInput type="time" placeholder="00:00" name="startsAt" />
+          <UiInput v-model="currentItem.startsAt" type="time" placeholder="00:00" name="startsAt" />
         </UiFormGroup>
       </div>
       <div class="agenda-item-form__col">
         <UiFormGroup label="Окончание">
-          <UiInput type="time" placeholder="00:00" name="endsAt" />
+          <UiInput v-model="currentItem.endsAt" type="time" placeholder="00:00" name="endsAt" />
         </UiFormGroup>
       </div>
     </div>
 
-    <UiFormGroup label="Тема">
-      <UiInput name="title" />
-    </UiFormGroup>
-    <UiFormGroup label="Докладчик">
-      <UiInput name="speaker" />
-    </UiFormGroup>
-    <UiFormGroup label="Описание">
-      <UiInput multiline name="description" />
-    </UiFormGroup>
-    <UiFormGroup label="Язык">
-      <UiDropdown title="Язык" :options="$options.talkLanguageOptions" name="language" />
+    <template v-if="currentItem.type === `talk`">
+      <UiFormGroup label="Тема">
+        <UiInput v-model="currentItem.title" name="title" />
+      </UiFormGroup>
+      <UiFormGroup label="Докладчик">
+        <UiInput v-model="currentItem.speaker" name="speaker" />
+      </UiFormGroup>
+      <UiFormGroup label="Описание">
+        <UiInput v-model="currentItem.description" multiline name="description" />
+      </UiFormGroup>
+      <UiFormGroup label="Язык">
+        <UiDropdown v-model="currentItem.language" title="Язык" :options="$options.talkLanguageOptions" name="language" />
+      </UiFormGroup>
+    </template>
+
+    <template v-else-if="currentItem.type === `other`">
+      <UiFormGroup label="Заголовок">
+        <UiInput v-model="currentItem.title" name="title" />
+      </UiFormGroup>
+      <UiFormGroup label="Описание">
+        <UiInput v-model="currentItem.description" multiline name="description" />
+      </UiFormGroup>
+    </template>
+
+    <UiFormGroup v-else label="Нестандартный текст (необязательно)">
+      <UiInput v-model="currentItem.title" name="title" />
     </UiFormGroup>
   </fieldset>
 </template>
 
-<script>
+<script lang="ts">
+import {defineComponent} from "vue";
+import type {PropType} from "vue";
 import UiIcon from './UiIcon.vue';
 import UiFormGroup from './UiFormGroup.vue';
 import UiInput from './UiInput.vue';
 import UiDropdown from './UiDropdown.vue';
 
-const agendaItemTypeIcons = {
+const agendaItemTypeIcons: Record<string, string> = {
   registration: 'key',
   opening: 'cal-sm',
   talk: 'tv',
@@ -53,7 +70,7 @@ const agendaItemTypeIcons = {
   other: 'cal-sm',
 };
 
-const agendaItemDefaultTitles = {
+const agendaItemDefaultTitles: Record<string, string> = {
   registration: 'Регистрация',
   opening: 'Открытие',
   break: 'Перерыв',
@@ -64,7 +81,7 @@ const agendaItemDefaultTitles = {
   other: 'Другое',
 };
 
-const agendaItemTypeOptions = Object.entries(agendaItemDefaultTitles).map(([type, title]) => ({
+const agendaItemTypeOptions = Object.entries(agendaItemDefaultTitles).map(([type, title]: [string, string]) => ({
   value: type,
   text: title,
   icon: agendaItemTypeIcons[type],
@@ -76,7 +93,23 @@ const talkLanguageOptions = [
   { value: 'EN', text: 'EN' },
 ];
 
-export default {
+interface AgendaItemInterface {
+  id: number;
+  startsAt: string;
+  endsAt: string;
+  type: string;
+  title: string | null;
+  description: string | null;
+  speaker: string | null;
+  language: string | null;
+}
+
+interface MeetupAgendaItemFormInterface {
+  currentItem: AgendaItemInterface;
+  timeShift: number;
+}
+
+export default defineComponent({
   name: 'MeetupAgendaItemForm',
 
   agendaItemTypeOptions,
@@ -86,11 +119,51 @@ export default {
 
   props: {
     agendaItem: {
-      type: Object,
+      type: Object as PropType<AgendaItemInterface>,
       required: true,
     },
   },
-};
+
+  emits: ['remove', 'update:agendaItem'],
+
+  data(): MeetupAgendaItemFormInterface {
+    return {
+      currentItem: {...this.agendaItem},
+      timeShift: 0,
+    }
+  },
+
+  watch: {
+    currentItem: {
+      deep: true,
+      handler() {
+        this.$emit('update:agendaItem', {...this.currentItem});
+      },
+    },
+    'currentItem.endsAt': {
+      immediate: true,
+      handler() {
+        const endHour = +this.currentItem.endsAt.substring(0,2);
+        const startHour = +this.currentItem.startsAt.substring(0,2)
+        this.timeShift = endHour - startHour < 0 ? 24 + endHour - startHour : endHour - startHour;
+      },
+    },
+    'currentItem.startsAt': {
+      handler(newValue) {
+        let updatedHours = +newValue.substring(0,2) + this.timeShift;
+
+        if (updatedHours > 23) {
+          updatedHours = updatedHours - 24;
+        }
+
+        this.currentItem.endsAt = newValue.replace(
+          newValue.substring(0,2),
+          updatedHours < 10 ? `0${updatedHours}`: updatedHours
+        );
+      },
+    },
+  }
+});
 </script>
 
 <style scoped>
