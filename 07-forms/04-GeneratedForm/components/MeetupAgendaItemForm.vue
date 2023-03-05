@@ -51,7 +51,6 @@ interface AgendaItemInterface {
 interface MeetupAgendaItemFormInterface {
   currentItem: AgendaItemInterface;
   timeShift: number;
-  agendaItemsNames: Record<string, string>
 }
 
 interface FormSchemaInterface {
@@ -190,7 +189,6 @@ export default defineComponent({
     return {
       currentItem: {...this.agendaItem},
       timeShift: 0,
-      agendaItemsNames: {},
     }
   },
 
@@ -224,12 +222,6 @@ export default defineComponent({
       },
     },
   },
-
-  beforeMount() {
-    Object.keys(agendaItemFormSchemas).forEach((key) => {
-      this.agendaItemsNames[key] = key;
-    })
-  }
 });
 </script>
 
