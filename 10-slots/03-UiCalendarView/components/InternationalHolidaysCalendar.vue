@@ -1,8 +1,12 @@
 <template>
   <UiCalendarView>
-    <div v-for="holiday in internationalHolidaysMap[0][7]" :key="holiday" class="holiday">
-      {{ holiday }}
-    </div>
+    <template #info="{ dayData }">
+      <template v-for="holiday in internationalHolidays" :key="holiday">
+        <div v-if="holiday.date === dayData.day && holiday.month === dayData.month" class="holiday">
+          {{ holiday.holiday }}
+        </div>
+      </template>
+    </template>
   </UiCalendarView>
 </template>
 
